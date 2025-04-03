@@ -10,20 +10,37 @@ export default function RegisterPage() {
     const [message, setMessage] = useState("");
     const navigate = useNavigate();
 
-    const handleRegister = async (e) => {
+    const isStrongPassword = (password) => {
+        const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
+        const hasNumberSequence = /(0123|1234|2345|3456|4567|5678|6789|7890)/;
+
+        return regex.test(password) && !hasNumberSequence.test(password);
+      };
+      
+      const handleRegister = async (e) => {
         console.log("inside handle register");
         e.preventDefault();
         setMessage("");
       
+        if (!isStrongPassword(password)) {
+            setMessage(
+                "Password must be at least 8 characters, include uppercase, lowercase, number, special character, and must not contain 3 or more consecutive numbers (e.g. 123, 4567)."
+              );
+            setPassword(""); // Clears the password field
+
+          return;
+        }
+      
         try {
-            console.log("inside try");
-            try {
-                username = sanitizeHtml(username);
-                password = sanitizeHtml(password);
-                 // If this still doesn’t print, something in sanitizeHtml might be throwing an error
-              } catch (err) {
-                console.error("Sanitization failed:", err);
-              }             console.log("running the api next");
+          console.log("inside try");
+          try {
+            username = sanitizeHtml(username);
+            password = sanitizeHtml(password);
+          } catch (err) {
+            console.error("Sanitization failed:", err);
+          }
+      
+          console.log("running the api next");
           const response = await fetch("http://localhost:3000/api/auth/register", {
             method: "POST",
             headers: {
@@ -34,8 +51,8 @@ export default function RegisterPage() {
       
           const data = await response.json();
           if (response.ok) {
-            localStorage.setItem("token", data.token); // Optional: auto-login
-            navigate("/home"); // Redirect or show success message
+            localStorage.setItem("token", data.token); 
+            navigate("/home");
           } else {
             setMessage(data.message || "Registration failed");
           }
@@ -43,6 +60,7 @@ export default function RegisterPage() {
           setMessage("Failed to connect to the server.");
         }
       };
+      
       
 
 
@@ -116,6 +134,8 @@ export default function RegisterPage() {
         Register
       </button>
       </form>
+      {message && (<p style={{ color: "red", marginTop: "15px", fontWeight: "bold" }}>{message}</p>)}
+
     </div>
   );
 }
